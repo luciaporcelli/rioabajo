@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Captrue - Ecosistema Integrado</title>
+<style>
+  body, html { margin: 0; padding: 0; overflow: hidden; background: #F0F0F0; }
+  
+  #ecosystem-container {
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+  }
+
+  /* Contenedor del Ritual (Pop-up) */
+  #ritual-container {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 450px; height: 600px; background: #F2F2F2; border-radius: 30px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+    display: none; z-index: 10000; overflow: hidden;
+    flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  #btn-capture {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    padding: 15px 30px; background: white; border: 1px solid #000;
+    text-transform: uppercase; letter-spacing: 2px; font-size: 11px;
+    cursor: pointer; z-index: 500; transition: 0.3s;
+  }
+  #btn-capture:hover { background: #000; color: #fff; }
+
+  iframe { width: 100%; height: 100%; border: none; }
+</style>
+</head>
+<body>
+
+<button id="btn-capture" onclick="startCapture()">+ Nueva Captura</button>
+
+<div id="ritual-container" id="ritual-box">
+  </div>
+
+<div id="ecosystem-container"></div>
+
+<script>
+/** * --- CÓDIGO DEL ECOSISTEMA (FONDO) ---
+ * Mantiene la gravedad, las hormigas y la red orgánica.
+ */
+const ecosystemCode = `
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #F0F0F0; cursor: crosshair; }
+    #tooltip {
+      position: fixed; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(10px); padding: 18px 22px; pointer-events: none; 
+      display: none; z-index: 1000; min-width: 210px; border-radius: 20px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .tt-name { font-size: 21px; text-transform: uppercase; letter-spacing: 1.5px; color: #111; margin-bottom: 3px; }
+    .tt-region { font-size: 12px; font-style: italic; color: #555; margin-bottom: 14px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 6px; }
+    .ingredient-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
+    .color-bullet { width: 9px; height: 9px; border-radius: 50%; margin-right: 12px; }
+  </style>
+  <div id="tooltip"></div>
+  <script>
+    const INGREDIENTES = {
+      '#5C3B24': 'arcilla de ribera', '#4D603A': 'yerba lucera', '#214A51': 'agua del estuario',
+      '#4E3146': 'tinte de aguaribay', '#7D3D3A': 'tierra colorada', '#0F0F0F': 'carbón de sauce',
+      '#1C160F': 'resina de espinillo', '#C05E23': 'fruto de tala', '#97472A': 'semilla de ceibo',
+      '#CCA337': 'polen de chilca', '#DAA48D': 'flor de mburucuyá', '#D27500': 'junco maduro',
+      '#009A9E': 'arcilla azulada', '#FDF6E3': 'cuarzo blanco', '#D7C59E': 'arena de duna',
+      '#809B8E': 'caña tacuara', '#DA8E30': 'miel de camoatí', '#FFFFFF': 'espuma de río'
+    };
+    
+    let particles = []; let ants = []; let t = 0; let activeNode = null;
+    let state = "SEARCHING"; let timer = 0; let gravityVal, marginVal;
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      gravityVal = 0.00009; // Gravedad original del código 2
+      marginVal = -150;
+      ants.push(new Ant());
+    }
+
+    window.addNodeFromRitual = function(data) {
+      let p = new Particle(windowWidth/2, windowHeight/2);
+      p.name = data.name;
+      p.region = data.region;
+      p.dataColors = data.colors;
+      p.baseColor = color(data.colors[0]);
+      p.textureType = data.tex;
+      p.meshPoints = data.colors.map(c => ({x:random(100), y:random(100), color:color(c)}));
+      p.gradientImage = p.createMaterialImage();
+      particles.push(p);
+    };
+
+    function draw() {
+      background(242); t += 0.0012;
+      handleTimeline();
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        for (let j = i + 1; j < particles.length; j++) { drawOrganicElasticLink(particles[i], particles[j]); }
+      }
+      for (let p of particles) p.draw();
+      for (let ant of ants) { ant.update(particles); ant.draw(); }
+      drawTooltip();
+    }
+
+    function handleTimeline() {
+      if (timer > 0) timer--;
+      else if (state === "SHOWING") { state = "COOLING"; timer = 120; activeNode = null; }
+      else if (state === "COOLING") { state = "SEARCHING"; }
+    }
+
+    function drawTooltip() {
+      const tt = document.getElementById('tooltip');
+      if (state === "SHOWING" && activeNode) {
+        tt.style.display = 'block'; tt.style.left = activeNode.x + 'px'; tt.style.top = activeNode.y + 'px';
+        let rows = activeNode.dataColors.map(c => \`<div class="ingredient-row" style="color: \${c}"><div class="color-bullet" style="background: \${c}"></div>\${INGREDIENTES[c.toUpperCase()] || 'materia'}</div>\`).join('');
+        tt.innerHTML = \`<div class="tt-name">\${activeNode.name}</div><div class="tt-region">\${activeNode.region}</div>\${rows}\`;
+      } else tt.style.display = 'none';
+    }
+
+    function drawOrganicElasticLink(p, q) {
+      const d = dist(p.x, p.y, q.x, q.y);
+      if (d < 230) {
+        const alpha = map(d, 0, 230, 48, 0); const ang = atan2(q.y - p.y, q.x - p.x);
+        const ts = map(p.size, 20, 60, 5, 12); const te = map(q.size, 20, 60, 5, 12); const tm = map(d, 0, 230, 4, 0.2);
+        const mx = (p.x + q.x) / 2; const my = (p.y + q.y) / 2;
+        noStroke(); fill(red(p.baseColor), green(p.baseColor), blue(p.baseColor), alpha);
+        beginShape();
+        vertex(p.x + cos(ang + HALF_PI) * ts, p.y + sin(ang + HALF_PI) * ts);
+        bezierVertex(p.x + cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (ts * 0.8), p.y + sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (ts * 0.8), mx - cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (tm * 1.2), my - sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (tm * 1.2), mx + cos(ang + HALF_PI) * tm, my + sin(ang + HALF_PI) * tm);
+        vertex(mx + cos(ang - HALF_PI) * tm, my + sin(ang - HALF_PI) * tm);
+        bezierVertex(mx - cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (tm * 1.2), my - sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (tm * 1.2), p.x + cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (ts * 0.8), p.y + sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (ts * 0.8), p.x + cos(ang - HALF_PI) * ts, p.y + sin(ang - HALF_PI) * ts);
+        endShape(CLOSE);
+        fill(red(q.baseColor), green(q.baseColor), blue(q.baseColor), alpha);
+        beginShape();
+        vertex(mx + cos(ang + HALF_PI) * tm, my + sin(ang + HALF_PI) * tm);
+        bezierVertex(mx + cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (tm * 1.2), my + sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (tm * 1.2), q.x - cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (te * 0.8), q.y - sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (te * 0.8), q.x + cos(ang + HALF_PI) * te, q.y + sin(ang + HALF_PI) * te);
+        vertex(q.x + cos(ang - HALF_PI) * te, q.y + sin(ang - HALF_PI) * te);
+        bezierVertex(q.x - cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (te * 0.8), q.y - sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (te * 0.8), mx + cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (tm * 1.2), my + sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (tm * 1.2), mx + cos(ang - HALF_PI) * tm, my + sin(ang - HALF_PI) * tm);
+        endShape(CLOSE);
+      }
+    }
+
+    class Ant {
+      constructor() { this.x = random(width); this.y = random(height); this.angle = random(TWO_PI); this.noiseOff = random(1000); this.speed = random(1.7, 2.7); this.lastNodeId = null; }
+      update(targets) {
+        let closest = null; let minDist = 1000;
+        if (state === "SEARCHING") { for (let p of targets) { let d = dist(this.x, this.y, p.x, p.y); if (d < minDist && p.id !== this.lastNodeId) { minDist = d; closest = p; } } }
+        if (closest) { let targetAngle = atan2(closest.y - this.y, closest.x - this.x); this.angle = lerpAngle(this.angle, targetAngle, 0.08); if (minDist < 20) { activeNode = closest; state = "SHOWING"; timer = 300; this.lastNodeId = closest.id; } }
+        else this.angle += (noise(this.noiseOff, t) - 0.5) * 0.25;
+        this.x += cos(this.angle) * this.speed; this.y += sin(this.angle) * this.speed;
+        this.noiseOff += 0.01; if (this.x < 0 || this.x > width) this.angle = PI - this.angle; if (this.y < 0 || this.y > height) this.angle = -this.angle;
+      }
+      draw() { push(); translate(this.x, this.y); rotate(this.angle + HALF_PI); scale(0.35); fill(0); noStroke(); ellipse(0, 20, 15, 22); ellipse(0, 0, 10, 12); ellipse(0, -18, 12, 12); pop(); }
+    }
+
+    class Particle {
+      constructor(x, y) { 
+        this.id = random(100000); this.x = x; this.y = y; 
+        this.vx = random(-1, 1); this.vy = random(-1, 1); 
+        this.noiseOffsetX = random(100000); this.noiseOffsetY = random(100000); 
+        this.textureType = 0; this.size = random(35, 52); 
+      }
+      createMaterialImage() {
+        const sz = 120; const g = createGraphics(sz, sz); g.pixelDensity(1); g.loadPixels();
+        for (let y = 0; y < sz; y++) {
+          for (let x = 0; x < sz; x++) {
+            let tw = 0, r = 0, gc = 0, b = 0;
+            for (let p of this.meshPoints) { let w = 1 / pow(dist(x, y, p.x, p.y) + 1, 5); tw += w; r += red(p.color) * w; gc += green(p.color) * w; b += blue(p.color) * w; }
+            let txt = 0;
+            switch(this.textureType) {
+              case 0: txt = (random(1) > 0.92) ? random(-50, 50) : 0; break;
+              case 1: txt = noise(x * 0.5, y * 0.02) * 40 - 20; break;
+              case 2: txt = (sin(x * 1.5) * 15) + (cos(y * 1.5) * 15); break;
+              case 3: txt = noise(x * 0.08, y * 0.08) * 60 - 30; break;
+              case 4: txt = random(-30, 30); break;
+              case 5: let n = noise(x * 0.04, y * 0.04); txt = n > 0.6 ? 40 : (n < 0.3 ? -40 : 0); break;
+            }
+            let idx = (x + y * sz) * 4; let d = dist(x, y, sz/2, sz/2);
+            let ang = atan2(y - sz/2, x - sz/2); let noiseRadius = noise(cos(ang)*1.2 + 1, sin(ang)*1.2 + 1, this.textureType) * 22;
+            let m = map(d + noiseRadius, 5, sz * 0.55, 255, 0);
+            g.pixels[idx] = constrain(r/tw + txt, 0, 255); g.pixels[idx+1] = constrain(gc/tw + txt, 0, 255); g.pixels[idx+2] = constrain(b/tw + txt, 0, 255); g.pixels[idx+3] = constrain(m, 0, 255);
+          }
+        }
+        g.updatePixels(); return g;
+      }
+      update() {
+        const nx = noise(this.x * 0.0012 + this.noiseOffsetX, t) * 2 - 1;
+        const ny = noise(this.y * 0.0012 + this.noiseOffsetY, t + 500) * 2 - 1;
+        const dx = width / 2 - this.x; const dy = height / 2 - this.y;
+        this.vx += nx * 0.06 + dx * gravityVal; this.vy += ny * 0.06 + dy * gravityVal;
+        this.vx *= 0.985; this.vy *= 0.985; this.x += this.vx; this.y += this.vy;
+        if (this.x < marginVal) this.x = width - marginVal; if (this.x > width - marginVal) this.x = marginVal;
+        if (this.y < marginVal) this.y = height - marginVal; if (this.y > height - marginVal) this.y = marginVal;
+      }
+      draw() { imageMode(CENTER); image(this.gradientImage, this.x, this.y, 150, 150); }
+    }
+    function lerpAngle(a, b, step) { let delta = b - a; while (delta > PI) delta -= TWO_PI; while (delta < -PI) delta += TWO_PI; return a + delta * step; }
+    function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+  <\/script>
+`;
+
+/** * --- CÓDIGO DEL RITUAL (POPUP) ---
+ */
+const ritualCode = `
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+  <style>
+    body { margin: 0; background: #F2F2F2; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    #info-container { margin-top: -30px; text-align: center; min-height: 100px; }
+    .label-small { font-size: 9px; opacity: 0.6; letter-spacing: 2px; color: #111; margin-bottom: 5px; text-transform: uppercase; }
+    .main-text { font-size: 20px; font-weight: 400; text-transform: uppercase; letter-spacing: 2px; color: #111; min-height: 24px; }
+    .sub-text { font-size: 13px; font-style: italic; color: #555; margin-top: 4px; min-height: 16px; }
+    .fade-in { animation: fadeIn 0.8s forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <div id="info-container">
+    <div id="label" class="label-small">Iniciando...</div>
+    <div id="main" class="main-text"></div>
+    <div id="sub" class="sub-text"></div>
+  </div>
+  <script>
+    const PALETA = { tierras: ['#5C3B24', '#7D3D3A', '#0F0F0F', '#1C160F', '#4E3146'], vegetales: ['#4D603A', '#214A51', '#009A9E', '#809B8E'], luces: ['#CCA337', '#DAA48D', '#D27500', '#FDF6E3', '#C05E23'] };
+    const INGREDIENTES = { '#5C3B24': 'arcilla de ribera', '#4D603A': 'yerba lucera', '#214A51': 'agua del estuario', '#4E3146': 'tinte de aguaribay', '#7D3D3A': 'tierra colorada', '#0F0F0F': 'carbón de sauce', '#1C160F': 'resina de espinillo', '#C05E23': 'fruto de tala', '#97472A': 'semilla de ceibo', '#CCA337': 'polen de chilca', '#DAA48D': 'flor de mburucuyá', '#D27500': 'junco maduro', '#009A9E': 'arcilla azulada', '#FDF6E3': 'cuarzo blanco', '#D7C59E': 'arena de duna', '#809B8E': 'caña tacuara', '#DA8E30': 'miel de camoatí', '#FFFFFF': 'espuma de río' };
+    const REGIONES = ["Punta Lara", "Delta del Paraná", "Pastizales del Sur", "Ribera de Quilmes", "Monte Blanco", "Juncales de Berisso"];
+    const COMENSALES = ["Tamara", "Lucía", "Rodri", "Renata", "Juana"];
+    
+    let ingredients = []; let currentRegion = ""; let currentComensal = "";
+    let texType, step = 0, walkCycle = 0, mixFactor = 0; const SZ = 160;
+
+    function setup() { 
+      createCanvas(400, 400); 
+      pixelDensity(1); 
+      resetJourney(); 
+    }
+
+    function resetJourney() {
+      step = 0; walkCycle = 0; mixFactor = 0; texType = floor(random(6));
+      currentComensal = random(COMENSALES); currentRegion = random(REGIONES);
+      let c1 = random(PALETA.tierras); let c2 = random(PALETA.vegetales); let c3 = random(PALETA.luces);
+      ingredients = [c1, c2, c3].map(c => ({ originX: random(45, SZ-45), originY: random(45, SZ-45), color: color(c), hex: c, name: INGREDIENTES[c.toUpperCase()], strength: 0 }));
+    }
+
+    function draw() {
+      background(242); 
+      updateNarrative();
+      walkCycle += 0.035; 
+      if (step >= 5) mixFactor = lerp(mixFactor, 1, 0.012);
+      
+      translate(width/2 - SZ/2, height/2 - SZ/2);
+      let pg = createGraphics(SZ, SZ); pg.loadPixels();
+      for (let y = 0; y < SZ; y++) {
+        for (let x = 0; x < SZ; x++) {
+          let tw = 0, r = 0, g = 0, b = 0;
+          for (let i = 0; i < ingredients.length; i++) {
+            let p = ingredients[i]; if (p.strength > 0.01) {
+              let angle = walkCycle + (i * TWO_PI / 3);
+              let posX = p.originX + sin(angle) * (22 * mixFactor); 
+              let posY = p.originY + cos(angle) * (22 * mixFactor);
+              let w = 1 / pow(dist(x, y, posX, posY) + 1, 5) * p.strength;
+              tw += w; r += red(p.color) * w; g += green(p.color) * w; b += blue(p.color) * w;
+            }
+          }
+          if (tw > 0) {
+            let txt = 0; if (step >= 4) { switch(texType) { case 0: txt = (random(1) > 0.8) ? random(-75, 75) : 0; break; case 1: txt = noise(x * 0.4, y * 0.1) * 85 - 42; break; case 2: txt = sin(x * 1.8) * 28; break; default: txt = random(-35, 35); } }
+            let idx = (x + y * SZ) * 4; 
+            let d = dist(x, y, SZ/2, SZ/2) + noise(cos(atan2(y-SZ/2, x-SZ/2))+1, sin(atan2(y-SZ/2, x-SZ/2))+1, walkCycle*0.4)*28;
+            let m = map(d, 0, SZ * 0.46, 255, 0);
+            pg.pixels[idx] = constrain(r/tw + txt, 0, 255); pg.pixels[idx+1] = constrain(g/tw + txt, 0, 255); pg.pixels[idx+2] = constrain(b/tw + txt, 0, 255); pg.pixels[idx+3] = constrain(m, 0, 255);
+          }
+        }
+      }
+      pg.updatePixels(); image(pg, 0, 0);
+      
+      if (step === 5 && mixFactor > 0.92) { 
+        window.parent.postMessage({
+          type: 'RITUAL_COMPLETE',
+          data: { name: currentComensal, region: currentRegion, colors: ingredients.map(i => i.hex), tex: texType }
+        }, '*');
+        noLoop();
+      }
+    }
+
+    function updateNarrative() {
+      let label = document.getElementById('label'); let main = document.getElementById('main');
+      if (frameCount % 150 === 0 && step < 5) { 
+        step++; 
+        main.classList.remove('fade-in'); 
+        void main.offsetWidth; 
+        main.classList.add('fade-in'); 
+      }
+      if (step >= 1 && step <= 3) { ingredients[step-1].strength = lerp(ingredients[step-1].strength, 1, 0.05); label.innerText = "Cazando Ingrediente " + step; main.innerText = ingredients[step-1].name; }
+      else if (step === 4) { label.innerText = "Recibiendo Consejo"; main.innerText = "Región: " + currentRegion; }
+      else if (step === 5) { label.innerText = "Alimento Ritual"; main.innerText = "Sabores Licuados"; }
+    }
+  <\/script>
+`;
+
+// --- INYECTAR ECOSISTEMA ---
+const ecoContainer = document.getElementById('ecosystem-container');
+const ecoIframe = document.createElement('iframe');
+ecoIframe.id = "ecosystem-frame";
+ecoContainer.appendChild(ecoIframe);
+ecoIframe.contentWindow.document.open();
+ecoIframe.contentWindow.document.write(ecosystemCode);
+ecoIframe.contentWindow.document.close();
+
+// --- LÓGICA DE CONTROL DE POPUP (REINICIO BLINDADO) ---
+function startCapture() {
+  const container = document.getElementById('ritual-container');
+  
+  // Limpiamos el contenedor por si había un iframe viejo
+  container.innerHTML = ''; 
+  const newIframe = document.createElement('iframe');
+  newIframe.id = "ritual-iframe";
+  container.appendChild(newIframe);
+  
+  container.style.display = 'flex';
+  
+  // Escribimos el código del ritual en el nuevo iframe
+  newIframe.contentWindow.document.open();
+  newIframe.contentWindow.document.write(ritualCode);
+  newIframe.contentWindow.document.close();
+}
+
+// Escuchar mensaje de fin de ritual
+window.addEventListener('message', function(event) {
+  if (event.data.type === 'RITUAL_COMPLETE') {
+    setTimeout(() => {
+      document.getElementById('ritual-container').style.display = 'none';
+      // Mandar datos al ecosistema de fondo
+      const ecoFrame = document.getElementById('ecosystem-frame');
+      ecoFrame.contentWindow.addNodeFromRitual(event.data.data);
+    }, 800);
+  }
+});
+</script>
+</body>
+</html>

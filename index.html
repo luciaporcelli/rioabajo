@@ -2,335 +2,815 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Captrue - Ecosistema Integrado</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Río Abajo</title>
+
+<script>
+const CONFIG = {
+
+  colores: {
+    fondo:           "#f5f5f5",
+    fondoPopup:      "#f5f5f5",
+    texto:           "#6E9997",
+    textoSuave:      "#6E9997",
+    borde:           "#6E9997",
+    acento:          "#3D2B1F",
+    overlayColor:    "#1A0F05",
+  },
+
+  opacidades: {
+    overlay:         0.4,
+    trazoNodos:      250,
+    headerTexto:     0.0,
+    bordeBoton:      0.26,
+  },
+
+  tipografia: {
+    fontURL:         "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Raleway:wght@200;300;400&display=swap",
+    fontCuerpo:      "'Raleway', sans-serif",
+    fontLabel:       "'Raleway', sans-serif",
+    fontLabelPeso:   "300",
+    fontLabelSpacing:"3px",
+  },
+
+  popup: {
+    borderRadiusMobile:  "20px 20px 0 0",
+    borderRadiusDesktop: "20px",
+    sombra: "0 -2px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.05)",
+    lineaTop:        true,
+    lineaTopOpacity: 0.18,
+    handleVisible:   true,
+    handleColor:     "rgba(30,20,10,0.13)",
+    handleAncho:     "36px",
+    handleAlto:      "4px",
+    watermarkVisible:true,
+    watermarkOpacity:0.0,
+    anchoDesktop:    "420px",
+    altoDesktop:     "580px",
+    barraProgreso:   true,
+    barraColor:      "rgba(30,20,10,0.18)",
+    barraAlto:       "2px",
+  },
+
+  pigmentos: {
+    '#5C3B24': 'arcilla de ribera',
+    '#4D603A': 'yerba lucera',
+    '#214A51': 'agua del estuario',
+    '#4E3146': 'tinte de aguaribay',
+    '#7D3D3A': 'tierra colorada',
+    '#0F0F0F': 'carbón de sauce',
+    '#1C160F': 'resina de espinillo',
+    '#C05E23': 'fruto de tala',
+    '#97472A': 'semilla de ceibo',
+    '#CCA337': 'polen de chilca',
+    '#DAA48D': 'flor de mburucuyá',
+    '#D27500': 'junco maduro',
+    '#009A9E': 'arcilla azulada',
+    '#FDF6E3': 'cuarzo blanco',
+    '#D7C59E': 'arena de duna',
+    '#809B8E': 'caña tacuara',
+    '#DA8E30': 'miel de camoatí',
+    '#FFFFFF': 'espuma de río',
+  },
+
+  pigmentosGrupos: {
+    tierras:   ['#5C3B24','#7D3D3A','#0F0F0F','#1C160F','#4E3146'],
+    vegetales: ['#4D603A','#214A51','#009A9E','#809B8E'],
+    luces:     ['#CCA337','#DAA48D','#D27500','#FDF6E3','#C05E23'],
+  },
+
+  regiones:   ["Punta Lara","Delta del Paraná","Pastizales del Sur","Ribera de Quilmes","Monte Blanco","Juncales de Berisso"],
+  comensales: ["Tamara","Lucía","Rodrigo","Renata","Juana"],
+
+  // ── RECOLECCIONES INICIALES ───────────────────────────────────────────────
+  // Cuántas recolecciones al azar aparecen al cargar la página.
+  // Ponés 0 para empezar vacío, o el número que quieras.
+  recoleccionesIniciales: 20,
+
+  // ── DISTRIBUCIÓN DE NODOS ─────────────────────────────────────────────────
+  // gravedad: atracción hacia el centro. Más bajo = más dispersos.
+  //   0.00009 = muy agrupados   |   0.00002 = bien dispersos   |   0 = sin gravedad
+  // margen: cuántos px pueden salir fuera del borde de la pantalla.
+  //   -150 = quedan adentro   |   -400 = pueden irse bastante afuera
+  gravedad: 0.00002,
+  margen:   -250,
+
+};
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="font-link" rel="stylesheet" href="">
+
 <style>
-  body, html { margin: 0; padding: 0; overflow: hidden; background: #F0F0F0; }
-  
-  #ecosystem-container {
-    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+  *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body, html {
+    margin: 0; padding: 0; overflow: hidden;
+    background: var(--color-fondo, #EEEBE5);
+    height: 100%; height: -webkit-fill-available;
+    -webkit-font-smoothing: antialiased;
+  }
+  #ecosystem-container { position: fixed; inset: 0; z-index: 1; }
+
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 400;
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: max(20px, env(safe-area-inset-top, 20px));
+    padding-left: 24px; padding-right: 24px;
+    pointer-events: none;
+  }
+  #header-title {
+    font-family: var(--font-cuerpo);
+    font-size: 12px; font-weight: 400; letter-spacing: 4.5px;
+    text-transform: uppercase;
+    color: var(--color-texto);
+    opacity: var(--op-header-texto, 0.38);
+  }
+  #header-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--color-borde); opacity: 0.5;
   }
 
-  /* Contenedor del Ritual (Pop-up) */
+  #overlay {
+    position: fixed; inset: 0;
+    background: var(--color-overlay);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    z-index: 9000; opacity: 0; pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  #overlay.visible { opacity: 1; pointer-events: auto; }
+
   #ritual-container {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 450px; height: 600px; background: #F2F2F2; border-radius: 30px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-    display: none; z-index: 10000; overflow: hidden;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 88vh; height: 88dvh;
+    background: var(--color-fondo-popup);
+    border-radius: var(--popup-radius-mobile);
+    box-shadow: var(--popup-sombra);
+    z-index: 10000; overflow: hidden;
+    display: none;
     flex-direction: column; align-items: center; justify-content: center;
-    border: 1px solid rgba(0,0,0,0.05);
+    transform: translateY(100%);
+    transition: transform 0.52s cubic-bezier(0.32,0.72,0,1);
+  }
+  #ritual-container.visible { transform: translateY(0); }
+
+  #ritual-handle {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    border-radius: 2px; z-index: 2;
+  }
+
+  #ritual-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-borde) 40%, var(--color-borde) 60%, transparent);
+  }
+
+  #stage-watermark {
+    position: absolute; bottom: 20px; right: 24px;
+    font-family: var(--font-cuerpo);
+    font-size: 80px; line-height: 1; letter-spacing: -3px;
+    color: var(--color-texto);
+    opacity: var(--popup-watermark-op, 0.06);
+    pointer-events: none; user-select: none;
   }
 
   #btn-capture {
-    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-    padding: 15px 30px; background: white; border: 1px solid #000;
-    text-transform: uppercase; letter-spacing: 2px; font-size: 11px;
-    cursor: pointer; z-index: 500; transition: 0.3s;
+    display: none !important;
+    background: var(--color-fondo-popup-glass);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--color-borde-boton);
+    border-radius: 2px;
+    font-family: var(--font-label);
+    font-weight: var(--font-label-peso);
+    font-size: 10px;
+    letter-spacing: var(--font-label-spacing);
+    text-transform: uppercase;
+    color: var(--color-texto);
+    opacity: 0.8;
+    cursor: pointer; white-space: nowrap;
+    z-index: 500; -webkit-appearance: none; appearance: none;
+    transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
   }
-  #btn-capture:hover { background: #000; color: #fff; }
+  #btn-capture:active {
+    background: var(--color-acento); color: var(--color-fondo-popup);
+    border-color: transparent; opacity: 1;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .btn-dash { opacity: 0.3; font-size: 8px; }
 
-  iframe { width: 100%; height: 100%; border: none; }
+  @media (min-width: 640px) {
+    #ritual-container {
+      bottom: auto; left: 50%; right: auto;
+      width: var(--popup-ancho-desktop);
+      height: var(--popup-alto-desktop);
+      border-radius: var(--popup-radius-desktop);
+      top: 50%;
+      transform: translate(-50%, -46%) scale(0.95);
+      transition: opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1);
+      opacity: 0;
+    }
+    #ritual-handle { display: none; }
+    #ritual-container.visible {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    #btn-capture:hover {
+      background: var(--color-acento); color: var(--color-fondo-popup);
+      border-color: transparent; opacity: 1;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+    }
+  }
+
+  iframe { width: 100%; height: 100%; border: none; display: block; }
 </style>
 </head>
 <body>
 
-<button id="btn-capture" onclick="startCapture()">+ Nueva Captura</button>
+<div id="header">
+  <span id="header-title">Río Abajo</span>
+  <span id="header-dot"></span>
+</div>
 
-<div id="ritual-container" id="ritual-box">
-  </div>
+<div id="overlay" onclick="closeCapture()"></div>
+
+<button id="btn-capture" onclick="startCapture()">
+  <span class="btn-dash">—</span>
+  nueva recolección
+  <span class="btn-dash">—</span>
+</button>
+
+<div id="ritual-container">
+  <div id="ritual-handle"></div>
+  <div id="ritual-line"></div>
+  <div id="stage-watermark">I</div>
+</div>
 
 <div id="ecosystem-container"></div>
 
 <script>
-/** * --- CÓDIGO DEL ECOSISTEMA (FONDO) ---
- * Mantiene la gravedad, las hormigas y la red orgánica.
- */
+document.getElementById('font-link').href = CONFIG.tipografia.fontURL;
+
+function hexToRgb(hex) {
+  hex = hex.replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const n = parseInt(hex,16);
+  return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+}
+function rgbToHsl({r,g,b}) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){ h=s=0; }
+  else{
+    const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){ case r:h=(g-b)/d+(g<b?6:0);break; case g:h=(b-r)/d+2;break; case b:h=(r-g)/d+4;break; }
+    h/=6;
+  }
+  return { h:h*360, s:s*100, l:l*100 };
+}
+function hslToHex(h,s,l) {
+  h/=360; s/=100; l/=100;
+  const hue2rgb=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+  let r,g,b;
+  if(s===0){ r=g=b=l; }
+  else{
+    const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
+  }
+  return '#'+[r,g,b].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
+}
+function wcagLuminance(hex) {
+  const {r,g,b}=hexToRgb(hex);
+  const chan=v=>{ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); };
+  return 0.2126*chan(r)+0.7152*chan(g)+0.0722*chan(b);
+}
+function contrastRatio(hex1, hex2) {
+  const l1=wcagLuminance(hex1), l2=wcagLuminance(hex2);
+  const lighter=Math.max(l1,l2), darker=Math.min(l1,l2);
+  return (lighter+0.05)/(darker+0.05);
+}
+function ensureContrast(textHex, bgHex, targetRatio=4.5) {
+  if (contrastRatio(textHex, bgHex) >= targetRatio) return textHex;
+  const bgL = wcagLuminance(bgHex);
+  const {h,s,l} = rgbToHsl(hexToRgb(textHex));
+  const direction = bgL > 0.18 ? -1 : 1;
+  let newL = l;
+  for (let i=0; i<50; i++) {
+    newL = Math.max(0, Math.min(100, newL + direction*2));
+    const candidate = hslToHex(h, s, newL);
+    if (contrastRatio(candidate, bgHex) >= targetRatio) return candidate;
+  }
+  return direction === -1 ? '#000000' : '#ffffff';
+}
+
+const C = CONFIG.colores;
+const textoSeguро   = ensureContrast(C.texto,      C.fondoPopup, 4.5);
+const textoSuaveSeg = ensureContrast(C.textoSuave, C.fondoPopup, 3.0);
+const acentoSeg     = ensureContrast(C.acento,     C.fondoPopup, 4.5);
+
+const root = document.documentElement;
+root.style.setProperty('--color-fondo',          C.fondo);
+root.style.setProperty('--color-fondo-popup',    C.fondoPopup);
+root.style.setProperty('--color-fondo-popup-glass', hexToRgb(C.fondoPopup) && `rgba(${Object.values(hexToRgb(C.fondoPopup)).join(',')},0.82)`);
+root.style.setProperty('--color-texto',          textoSeguро);
+root.style.setProperty('--color-texto-suave',    textoSuaveSeg);
+root.style.setProperty('--color-borde',          C.borde);
+root.style.setProperty('--color-acento',         acentoSeg);
+root.style.setProperty('--color-overlay',        hexToRgb(C.overlayColor) && `rgba(${Object.values(hexToRgb(C.overlayColor)).join(',')},${CONFIG.opacidades.overlay})`);
+root.style.setProperty('--color-borde-boton',    hexToRgb(C.borde) && `rgba(${Object.values(hexToRgb(C.borde)).join(',')},${CONFIG.opacidades.bordeBoton * 2})`);
+
+root.style.setProperty('--font-cuerpo',          CONFIG.tipografia.fontCuerpo);
+root.style.setProperty('--font-label',           CONFIG.tipografia.fontLabel);
+root.style.setProperty('--font-label-peso',      CONFIG.tipografia.fontLabelPeso);
+root.style.setProperty('--font-label-spacing',   CONFIG.tipografia.fontLabelSpacing);
+root.style.setProperty('--op-header-texto',      CONFIG.opacidades.headerTexto);
+
+root.style.setProperty('--popup-radius-mobile',  CONFIG.popup.borderRadiusMobile);
+root.style.setProperty('--popup-radius-desktop', CONFIG.popup.borderRadiusDesktop);
+root.style.setProperty('--popup-sombra',         CONFIG.popup.sombra);
+root.style.setProperty('--popup-ancho-desktop',  CONFIG.popup.anchoDesktop);
+root.style.setProperty('--popup-alto-desktop',   CONFIG.popup.altoDesktop);
+root.style.setProperty('--popup-watermark-op',   CONFIG.popup.watermarkVisible ? CONFIG.popup.watermarkOpacity : 0);
+
+const handle = document.getElementById('ritual-handle');
+if (CONFIG.popup.handleVisible) {
+  handle.style.width      = CONFIG.popup.handleAncho;
+  handle.style.height     = CONFIG.popup.handleAlto;
+  handle.style.background = CONFIG.popup.handleColor;
+} else {
+  handle.style.display = 'none';
+}
+
+const lineaEl = document.getElementById('ritual-line');
+if (!CONFIG.popup.lineaTop) lineaEl.style.display = 'none';
+else lineaEl.style.opacity = CONFIG.popup.lineaTopOpacity;
+
+
+const _C       = JSON.stringify(CONFIG.colores);
+const _ing     = JSON.stringify(CONFIG.pigmentos);
+const _grupos  = JSON.stringify(CONFIG.pigmentosGrupos);
+const _reg     = JSON.stringify(CONFIG.regiones);
+const _com     = JSON.stringify(CONFIG.comensales);
+const _tipURL  = CONFIG.tipografia.fontURL;
+const _tipCuerpo = CONFIG.tipografia.fontCuerpo;
+const _tipLabel  = CONFIG.tipografia.fontLabel;
+const _tipLabelPeso = CONFIG.tipografia.fontLabelPeso;
+const _opTrazo = CONFIG.opacidades.trazoNodos;
+const _popup   = JSON.stringify(CONFIG.popup);
+const _textoSeg   = textoSeguро;
+const _textoSuaveSeg = textoSuaveSeg;
+const _acentoSeg  = acentoSeg;
+const _recolInicial = CONFIG.recoleccionesIniciales || 0;
+const _gravedad = CONFIG.gravedad !== undefined ? CONFIG.gravedad : 0.00009;
+const _margen   = CONFIG.margen   !== undefined ? CONFIG.margen   : -150;
+
 const ecosystemCode = `
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="${_tipURL}" rel="stylesheet">
   <style>
-    body { margin: 0; overflow: hidden; background: #F0F0F0; cursor: crosshair; }
+    body { margin:0; overflow:hidden; background:${CONFIG.colores.fondo}; }
     #tooltip {
-      position: fixed; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(10px); padding: 18px 22px; pointer-events: none; 
-      display: none; z-index: 1000; min-width: 210px; border-radius: 20px;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      position:fixed;
+      background:rgba(${Object.values(hexToRgb(CONFIG.colores.fondoPopup)).join(',')},0.12);
+      backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+      padding:18px 22px 16px;
+      pointer-events:none; display:none; z-index:1000;
+      min-width:190px; max-width:250px;
+      border-radius:${CONFIG.popup.borderRadiusDesktop};
+      font-family:${_tipCuerpo};
+      border:1px solid rgba(${Object.values(hexToRgb(CONFIG.colores.borde)).join(',')},0.18);
+      box-shadow:0 8px 32px rgba(0,0,0,0.06);
     }
-    .tt-name { font-size: 21px; text-transform: uppercase; letter-spacing: 1.5px; color: #111; margin-bottom: 3px; }
-    .tt-region { font-size: 12px; font-style: italic; color: #555; margin-bottom: 14px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 6px; }
-    .ingredient-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
-    .color-bullet { width: 9px; height: 9px; border-radius: 50%; margin-right: 12px; }
+    .tt-name {
+      font-size:17px; font-weight:400; text-transform:uppercase;
+      letter-spacing:2px; color:${_textoSeg}; margin-bottom:2px; line-height:1.2;
+    }
+    .tt-region {
+      font-size:12px; font-style:italic; color:${_textoSuaveSeg};
+      margin-bottom:12px; padding-bottom:10px;
+      border-bottom:1px solid rgba(${Object.values(hexToRgb(CONFIG.colores.borde)).join(',')},0.18);
+    }
+    .ingredient-row {
+      display:flex; align-items:center; margin-bottom:5px;
+      font-size:13px;
+      font-family:${_tipLabel}; font-weight:${_tipLabelPeso}; letter-spacing:0.5px;
+      color:${_textoSeg};
+    }
+    .color-bullet { width:7px; height:7px; border-radius:50%; margin-right:10px; flex-shrink:0; }
   </style>
   <div id="tooltip"></div>
   <script>
-    const INGREDIENTES = {
-      '#5C3B24': 'arcilla de ribera', '#4D603A': 'yerba lucera', '#214A51': 'agua del estuario',
-      '#4E3146': 'tinte de aguaribay', '#7D3D3A': 'tierra colorada', '#0F0F0F': 'carbón de sauce',
-      '#1C160F': 'resina de espinillo', '#C05E23': 'fruto de tala', '#97472A': 'semilla de ceibo',
-      '#CCA337': 'polen de chilca', '#DAA48D': 'flor de mburucuyá', '#D27500': 'junco maduro',
-      '#009A9E': 'arcilla azulada', '#FDF6E3': 'cuarzo blanco', '#D7C59E': 'arena de duna',
-      '#809B8E': 'caña tacuara', '#DA8E30': 'miel de camoatí', '#FFFFFF': 'espuma de río'
-    };
-    
-    let particles = []; let ants = []; let t = 0; let activeNode = null;
-    let state = "SEARCHING"; let timer = 0; let gravityVal, marginVal;
+    const INGREDIENTES=${_ing};
+    const OP_TRAZO=${_opTrazo};
 
-    function setup() {
-      createCanvas(windowWidth, windowHeight);
-      gravityVal = 0.00009; // Gravedad original del código 2
-      marginVal = -150;
-      ants.push(new Ant());
+    let particles=[]; let ants=[]; let t=0; let activeNode=null;
+    let state="SEARCHING"; let timer=0;
+    const gravityVal=${_gravedad}, marginVal=${_margen};
+
+    function setup(){ createCanvas(windowWidth,windowHeight); ants.push(new Ant()); seedInitial(); }
+
+    document.addEventListener('click', function(){ window.parent.postMessage({type:'START_CAPTURE'},'*'); });
+
+    function keyPressed(){
+      if(key === 'e' || key === 'E') exportTransparentPNG();
     }
 
-    window.addNodeFromRitual = function(data) {
-      let p = new Particle(windowWidth/2, windowHeight/2);
-      p.name = data.name;
-      p.region = data.region;
-      p.dataColors = data.colors;
-      p.baseColor = color(data.colors[0]);
-      p.textureType = data.tex;
-      p.meshPoints = data.colors.map(c => ({x:random(100), y:random(100), color:color(c)}));
-      p.gradientImage = p.createMaterialImage();
+    function exportTransparentPNG(){
+      if(particles.length === 0) return;
+      // Canvas offscreen de alta resolución con fondo transparente
+      const scale = 2;
+      const pg = createGraphics(windowWidth * scale, windowHeight * scale);
+      pg.pixelDensity(1);
+      pg.scale(scale, scale);
+      // Fondo transparente — no llamamos background()
+      pg.clear();
+
+      // Redibujar conexiones
+      for(let i = 0; i < particles.length; i++){
+        for(let j = i+1; j < particles.length; j++){
+          const p = particles[i], q = particles[j];
+          const d = dist(p.x, p.y, q.x, q.y);
+          if(d < 230){
+            const alpha = map(d, 0, 230, OP_TRAZO, 0);
+            const ang = atan2(q.y - p.y, q.x - p.x);
+            const ts = map(p.size, 20, 60, 5, 12), te = map(q.size, 20, 60, 5, 12), tm = map(d, 0, 230, 4, 0.2);
+            const mx = (p.x + q.x)/2, my = (p.y + q.y)/2;
+            pg.noStroke();
+            pg.fill(red(p.baseColor), green(p.baseColor), blue(p.baseColor), alpha);
+            pg.beginShape();
+            pg.vertex(p.x+cos(ang+HALF_PI)*ts, p.y+sin(ang+HALF_PI)*ts);
+            pg.bezierVertex(p.x+cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(ts*0.8), p.y+sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(ts*0.8), mx-cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(tm*1.2), my-sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(tm*1.2), mx+cos(ang+HALF_PI)*tm, my+sin(ang+HALF_PI)*tm);
+            pg.vertex(mx+cos(ang-HALF_PI)*tm, my+sin(ang-HALF_PI)*tm);
+            pg.bezierVertex(mx-cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(tm*1.2), my-sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(tm*1.2), p.x+cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(ts*0.8), p.y+sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(ts*0.8), p.x+cos(ang-HALF_PI)*ts, p.y+sin(ang-HALF_PI)*ts);
+            pg.endShape(CLOSE);
+            pg.fill(red(q.baseColor), green(q.baseColor), blue(q.baseColor), alpha);
+            pg.beginShape();
+            pg.vertex(mx+cos(ang+HALF_PI)*tm, my+sin(ang+HALF_PI)*tm);
+            pg.bezierVertex(mx+cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(tm*1.2), my+sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(tm*1.2), q.x-cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(te*0.8), q.y-sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(te*0.8), q.x+cos(ang+HALF_PI)*te, q.y+sin(ang+HALF_PI)*te);
+            pg.vertex(q.x+cos(ang-HALF_PI)*te, q.y+sin(ang-HALF_PI)*te);
+            pg.bezierVertex(q.x-cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(te*0.8), q.y-sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(te*0.8), mx+cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(tm*1.2), my+sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(tm*1.2), mx+cos(ang-HALF_PI)*tm, my+sin(ang-HALF_PI)*tm);
+            pg.endShape(CLOSE);
+          }
+        }
+      }
+
+      // Redibujar nodos
+      for(let p of particles){
+        pg.imageMode(CENTER);
+        pg.image(p.gradientImage, p.x, p.y, 150, 150);
+      }
+
+      // Exportar
+      const cnv = pg.elt;
+      const link = document.createElement('a');
+      link.download = 'rio_abajo.png';
+      link.href = cnv.toDataURL('image/png');
+      link.click();
+      pg.remove();
+    }
+
+    window.addNodeFromRitual=function(data){
+      let p=new Particle(windowWidth/2,windowHeight/2);
+      p.name=data.name; p.region=data.region; p.dataColors=data.colors;
+      p.baseColor=color(data.colors[0]); p.textureType=data.tex;
+      p.meshPoints=data.colors.map(c=>({x:random(100),y:random(100),color:color(c)}));
+      p.gradientImage=p.createMaterialImage();
       particles.push(p);
     };
 
-    function draw() {
-      background(242); t += 0.0012;
-      handleTimeline();
-      for (let i = 0; i < particles.length; i++) {
+    function draw(){
+      background(${hexToRgb(CONFIG.colores.fondo).r},${hexToRgb(CONFIG.colores.fondo).g},${hexToRgb(CONFIG.colores.fondo).b});
+      t+=0.0012; handleTimeline();
+      for(let i=0;i<particles.length;i++){
         particles[i].update();
-        for (let j = i + 1; j < particles.length; j++) { drawOrganicElasticLink(particles[i], particles[j]); }
+        for(let j=i+1;j<particles.length;j++) drawOrganicElasticLink(particles[i],particles[j]);
       }
-      for (let p of particles) p.draw();
-      for (let ant of ants) { ant.update(particles); ant.draw(); }
+      for(let p of particles) p.draw();
+      for(let ant of ants){ ant.update(particles); ant.draw(); }
       drawTooltip();
     }
 
-    function handleTimeline() {
-      if (timer > 0) timer--;
-      else if (state === "SHOWING") { state = "COOLING"; timer = 120; activeNode = null; }
-      else if (state === "COOLING") { state = "SEARCHING"; }
+    function handleTimeline(){
+      if(timer>0) timer--;
+      else if(state==="SHOWING"){state="COOLING";timer=120;activeNode=null;}
+      else if(state==="COOLING"){state="SEARCHING";}
     }
 
-    function drawTooltip() {
-      const tt = document.getElementById('tooltip');
-      if (state === "SHOWING" && activeNode) {
-        tt.style.display = 'block'; tt.style.left = activeNode.x + 'px'; tt.style.top = activeNode.y + 'px';
-        let rows = activeNode.dataColors.map(c => \`<div class="ingredient-row" style="color: \${c}"><div class="color-bullet" style="background: \${c}"></div>\${INGREDIENTES[c.toUpperCase()] || 'materia'}</div>\`).join('');
-        tt.innerHTML = \`<div class="tt-name">\${activeNode.name}</div><div class="tt-region">\${activeNode.region}</div>\${rows}\`;
-      } else tt.style.display = 'none';
+    function drawTooltip(){
+      const tt=document.getElementById('tooltip');
+      if(state==="SHOWING"&&activeNode){
+        let tx=activeNode.x+18,ty=activeNode.y-20;
+        if(tx+260>windowWidth) tx=activeNode.x-260;
+        if(ty+180>windowHeight) ty=windowHeight-200;
+        tt.style.display='block'; tt.style.left=tx+'px'; tt.style.top=ty+'px';
+        let rows=activeNode.dataColors.map(c=>\`<div class="ingredient-row"><div class="color-bullet" style="background:\${c}"></div>\${INGREDIENTES[c.toUpperCase()]||'materia del territorio'}</div>\`).join('');
+        tt.innerHTML=\`<div class="tt-name">\${activeNode.name}</div><div class="tt-region">\${activeNode.region}</div>\${rows}\`;
+      } else tt.style.display='none';
     }
 
-    function drawOrganicElasticLink(p, q) {
-      const d = dist(p.x, p.y, q.x, q.y);
-      if (d < 230) {
-        const alpha = map(d, 0, 230, 48, 0); const ang = atan2(q.y - p.y, q.x - p.x);
-        const ts = map(p.size, 20, 60, 5, 12); const te = map(q.size, 20, 60, 5, 12); const tm = map(d, 0, 230, 4, 0.2);
-        const mx = (p.x + q.x) / 2; const my = (p.y + q.y) / 2;
-        noStroke(); fill(red(p.baseColor), green(p.baseColor), blue(p.baseColor), alpha);
+    function drawOrganicElasticLink(p,q){
+      const d=dist(p.x,p.y,q.x,q.y);
+      if(d<230){
+        const alpha=map(d,0,230,OP_TRAZO,0);
+        const ang=atan2(q.y-p.y,q.x-p.x);
+        const ts=map(p.size,20,60,5,12),te=map(q.size,20,60,5,12),tm=map(d,0,230,4,0.2);
+        const mx=(p.x+q.x)/2,my=(p.y+q.y)/2;
+        noStroke();
+        fill(red(p.baseColor),green(p.baseColor),blue(p.baseColor),alpha);
         beginShape();
-        vertex(p.x + cos(ang + HALF_PI) * ts, p.y + sin(ang + HALF_PI) * ts);
-        bezierVertex(p.x + cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (ts * 0.8), p.y + sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (ts * 0.8), mx - cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (tm * 1.2), my - sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (tm * 1.2), mx + cos(ang + HALF_PI) * tm, my + sin(ang + HALF_PI) * tm);
-        vertex(mx + cos(ang - HALF_PI) * tm, my + sin(ang - HALF_PI) * tm);
-        bezierVertex(mx - cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (tm * 1.2), my - sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (tm * 1.2), p.x + cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (ts * 0.8), p.y + sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (ts * 0.8), p.x + cos(ang - HALF_PI) * ts, p.y + sin(ang - HALF_PI) * ts);
+        vertex(p.x+cos(ang+HALF_PI)*ts,p.y+sin(ang+HALF_PI)*ts);
+        bezierVertex(p.x+cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(ts*0.8),p.y+sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(ts*0.8),mx-cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(tm*1.2),my-sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(tm*1.2),mx+cos(ang+HALF_PI)*tm,my+sin(ang+HALF_PI)*tm);
+        vertex(mx+cos(ang-HALF_PI)*tm,my+sin(ang-HALF_PI)*tm);
+        bezierVertex(mx-cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(tm*1.2),my-sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(tm*1.2),p.x+cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(ts*0.8),p.y+sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(ts*0.8),p.x+cos(ang-HALF_PI)*ts,p.y+sin(ang-HALF_PI)*ts);
         endShape(CLOSE);
-        fill(red(q.baseColor), green(q.baseColor), blue(q.baseColor), alpha);
+        fill(red(q.baseColor),green(q.baseColor),blue(q.baseColor),alpha);
         beginShape();
-        vertex(mx + cos(ang + HALF_PI) * tm, my + sin(ang + HALF_PI) * tm);
-        bezierVertex(mx + cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (tm * 1.2), my + sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (tm * 1.2), q.x - cos(ang) * (d*0.2) + cos(ang + HALF_PI) * (te * 0.8), q.y - sin(ang) * (d*0.2) + sin(ang + HALF_PI) * (te * 0.8), q.x + cos(ang + HALF_PI) * te, q.y + sin(ang + HALF_PI) * te);
-        vertex(q.x + cos(ang - HALF_PI) * te, q.y + sin(ang - HALF_PI) * te);
-        bezierVertex(q.x - cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (te * 0.8), q.y - sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (te * 0.8), mx + cos(ang) * (d*0.2) + cos(ang - HALF_PI) * (tm * 1.2), my + sin(ang) * (d*0.2) + sin(ang - HALF_PI) * (tm * 1.2), mx + cos(ang - HALF_PI) * tm, my + sin(ang - HALF_PI) * tm);
+        vertex(mx+cos(ang+HALF_PI)*tm,my+sin(ang+HALF_PI)*tm);
+        bezierVertex(mx+cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(tm*1.2),my+sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(tm*1.2),q.x-cos(ang)*(d*0.2)+cos(ang+HALF_PI)*(te*0.8),q.y-sin(ang)*(d*0.2)+sin(ang+HALF_PI)*(te*0.8),q.x+cos(ang+HALF_PI)*te,q.y+sin(ang+HALF_PI)*te);
+        vertex(q.x+cos(ang-HALF_PI)*te,q.y+sin(ang-HALF_PI)*te);
+        bezierVertex(q.x-cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(te*0.8),q.y-sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(te*0.8),mx+cos(ang)*(d*0.2)+cos(ang-HALF_PI)*(tm*1.2),my+sin(ang)*(d*0.2)+sin(ang-HALF_PI)*(tm*1.2),mx+cos(ang-HALF_PI)*tm,my+sin(ang-HALF_PI)*tm);
         endShape(CLOSE);
       }
     }
 
-    class Ant {
-      constructor() { this.x = random(width); this.y = random(height); this.angle = random(TWO_PI); this.noiseOff = random(1000); this.speed = random(1.7, 2.7); this.lastNodeId = null; }
-      update(targets) {
-        let closest = null; let minDist = 1000;
-        if (state === "SEARCHING") { for (let p of targets) { let d = dist(this.x, this.y, p.x, p.y); if (d < minDist && p.id !== this.lastNodeId) { minDist = d; closest = p; } } }
-        if (closest) { let targetAngle = atan2(closest.y - this.y, closest.x - this.x); this.angle = lerpAngle(this.angle, targetAngle, 0.08); if (minDist < 20) { activeNode = closest; state = "SHOWING"; timer = 300; this.lastNodeId = closest.id; } }
-        else this.angle += (noise(this.noiseOff, t) - 0.5) * 0.25;
-        this.x += cos(this.angle) * this.speed; this.y += sin(this.angle) * this.speed;
-        this.noiseOff += 0.01; if (this.x < 0 || this.x > width) this.angle = PI - this.angle; if (this.y < 0 || this.y > height) this.angle = -this.angle;
+    class Ant{
+      constructor(){ this.x=random(width);this.y=random(height);this.angle=random(TWO_PI);this.noiseOff=random(1000);this.speed=random(1.7,2.7);this.lastNodeId=null; }
+      update(targets){
+        let closest=null,minDist=1000;
+        if(state==="SEARCHING"){ for(let p of targets){ let d=dist(this.x,this.y,p.x,p.y); if(d<minDist&&p.id!==this.lastNodeId){minDist=d;closest=p;} } }
+        if(closest){ let ta=atan2(closest.y-this.y,closest.x-this.x); this.angle=lerpAngle(this.angle,ta,0.08); if(minDist<20){activeNode=closest;state="SHOWING";timer=300;this.lastNodeId=closest.id;} }
+        else this.angle+=(noise(this.noiseOff,t)-0.5)*0.25;
+        this.x+=cos(this.angle)*this.speed; this.y+=sin(this.angle)*this.speed;
+        this.noiseOff+=0.01;
+        if(this.x<0||this.x>width) this.angle=PI-this.angle;
+        if(this.y<0||this.y>height) this.angle=-this.angle;
       }
-      draw() { push(); translate(this.x, this.y); rotate(this.angle + HALF_PI); scale(0.35); fill(0); noStroke(); ellipse(0, 20, 15, 22); ellipse(0, 0, 10, 12); ellipse(0, -18, 12, 12); pop(); }
+      draw(){
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle + HALF_PI);
+        // usamos drawingContext para renderizar el path SVG exacto
+        const ctx = drawingContext;
+        ctx.save();
+        // centrar y escalar: el SVG mide 841x595, la hormiga está ~centrada en 420,297
+        const sc = 0.060;
+        ctx.scale(sc, sc);
+        ctx.translate(-420, -310);
+        ctx.fillStyle = 'rgba(28,18,8,0.88)';
+        ctx.strokeStyle = 'none';
+        const p = new Path2D('M417.77,420.05l-6.5,10.34-6.94,9.01-6.4,6.93c-4.22,4.57-10.56,9.46-16.94,8.88-4.32-.4-9.49-3.79-12.16-6.61l-10.39-11-6.31-7.67-5.86-10.12c-3.11-5.38-5.62-10.8-7.07-16.86l-2.95-12.31c-2.02-8.43-.59-17.46,2.38-25.44-.49-.59-1.21-1.22-1.08-1.62l.9-2.67,3.26-8.75c1.75-4.69,4.61-8.53,7.67-12.45,5.93-7.61,13.82-12.45,23.93-14.47-1.86-1.93-4.64-5.43-4.39-7.71l1.45-13.41c-.76.34-2.8,2.03-3.34,3.01l-3.94,7.1c-2.29,4.13-3.98,8.27-7.97,11.3-10.84,8.22-24.93,11.7-38.79,9.01-2.78.51-5.6,5.13-5.4,8.64l1.48,26.51c.34.72,1.42,3.05,1.3,2.79-3.6.25-1.5,3.54-1.43,4.92l.52,9.12.46,5.04.39,2.07-1.37.71c.81,2.61,1.8,8.27,1.63,10.76l-2.86-2.54c-.47-.42-1.51,1.71-1.37,1.65l-3.34-4,.58,9.55-1.4-2.63-2.95,9.04c-.81,2.47-.24,5.74.32,9.38l-2.79-3.55.83,12.87-2.05-4.96c-1.26,2.36-1.56,6.02-1.1,8.91l-2.59.07c-1.29,4.54-1.87,9.32-1.59,14.52l-2.35-3.26c-1.29,5.14-1.88,9.93-1.86,15.03l-2.34-3.18c-1.35,3.36-2.03,7.03-2.44,11.27l-2.06-1.95-3.86,9.85-4.15,3.97c-1.8,1.72-.99,4.75.14,7.96-1.21-.64-2.72-2.75-3.82-5.11l-5.11-1.13,5.13-1.82c1.11-.39,1.48-2.65,2.01-3.87,2.42-2.81,4.16-5.36,5.41-8.44,2.41-2.94,3.99-6.07,4.72-9.32l4.78-9.71c.49-1,.21-3.38-.15-4.21,1.33-2.26,3.83-6.46,3.99-9.03.2-3.26.68-3.63,2.12-6.44,1.83-3.55,2.85-8.01,3.88-12.13l-4.79,4.25c6.61-9.28,11.35-27.01,9.53-26.67l-2.94.55,1.12-14.52.49-8.09-2.64.65c6.17-8.21,3.59-13.47,2.96-12.52l1.58-2.4c1.79-9.7,3.92-19.26,7.34-28.4,2.79-7.48,8.39-11.16,15.53-13.74,10.13-3.66,20.44-6.13,31.44-6.39,0-16.64,12.65-18.76,14.28-21.6.61-1.06.26-4.36.02-5.59l-5.75-.4-6.54-.46c-5.55,3.37-11.21,2.39-16.9-.88l-11.43-6.56-2.75-1.46c-.77-.41-2.77.6-3.47,1.2l-14.62,12.59-6.16,5.7-5.04,4.35-4.6,5.82c-1.19.4-4.64-.39-6.31-1.14l-8.52,8.47c-2.87,2.86-4.86,5.17-6.31,8.63l-1-3.27c-2.83,2.7-4.61,5.33-5.84,8.22l-1.16-1.72c-.18-.26-.91.19-1.25.4l-3.48,4.79c-4.7-2.15-6.15,3.75-8.42,7.05l-.79-3.92-7.6,6.88c-2.63-.63-5.35.54-6.89,3.59l-8.27,1.76c-2.24.48-3.49,3.16-4.34,6.37l-1.35-6.11-4.53.4,2.91-1.95c.52-.35.41-1.46.35-2.2,5.77,1.55,17.3-.9,19.35-5.75l8.63-3.72c.41-.18.34-2.51-.11-2.53s2.76.03,3.13-.21l12.82-8.39-2.32-2.27c3.15,0,5.89-1.19,8.16-3.19l14.81-13.03-2.74-.53,2.21-4.32c6.18-5.49,12.79-10.7,19.49-15.12l-3.39-1.01,6.39-.42c19.06-11.16,32.49-15.35,51.54-.89l6.64-7.72c3.97-4.62,5.49-8.95,2.09-14.63l-3.35-5.6c-10.41,2.69-20.87.05-27.91-8.01-3.07-3.51-6.28-7.03-8.79-11.37-3.35-5.79-2.98-13.8-7.7-18.71-.4-.41.46-1.12,1.32-2.02-.32-4.39-1.37-8.32-3.3-11.75l2.21.92c.54.22-.13-2.5.03-3.11,1.88-7.44-4.83-8.42-1.03-14.17l-1.3-2.1c-.21-.35.69-.97,1.63-1.8l-5.94-10.66,3.25,1.84c-1.18-4.16-2.53-7.18-4.33-10.36-1.21-4.01-3.25-7.78-4.81-11.52-1.88-4.51-4.92-8.16-9.05-11.59l2.79-1.13-8.8-8.08,2.65-.9-6.11-6.56c1.27-4.33-3.79-3.75-5.44-10.15-2.17-2.41-4.04-4.65-5.71-7.3l-1.82-2.89c-.4-.63,1.65-2.82,2.24-2.34l5.32,4.35c4.19,3.42,2.36,6.26,5.65,7.45l5.07,8.97c1.27,2.24,1.59,5.36,4.17,6.39l4.49,9.24,1.69-2.65,2.33,10.74,2.12-1.68c.29,4.66,2.4,9.29,5.73,13.41.21,3.03,1.02,5.99,3.1,7.7l3.68,19.55,5.39,6.64c1.88,7.77,3.85,15.66,3.39,23.56-.39,6.64-.6,12.4,1.33,18.96,10.91-2.02,19.21,3.07,27.86,11.61-4.2-15.88,1.36-29.62,15.62-38.09l-13.69-.81c-9.18-.55-13.71-11-13.63-19.49-.39-3.33.06-6.78,2.04-9.16-.8-4.2-.58-8.93,2.1-13.19l3.89-10.12c2.16-5.63,6.04-9.93,11.81-12.3v-4.65s-18.17-1.88-18.17-1.88c-5.15-.53-9.1-3.08-11.87-7.12l-19.15-27.92c-3.07-4.48-5.47-10.01-7.89-15.04-.54-1.12.47-4.18,1.53-4.76s4.42.17,4.97,1.34l5.53,11.67c5.51,11.64,11.75,22.1,16.72,34.12,3.24,7.83,21.17,3.76,28.57,7.25,2.39,1.13,4.54,2.44,6.16,2.45.04-3.48,1-3.08,1.65-.59l.99-2.32c.19-.45,1.2-.3,1.34-.1l2.34,5.13c3.75.22,6.6-2.14,7.37-5.3l.68,2.78c.08.35.46.4.65.13l1.63-2.21,1.1,1.19c2.3-1.3,5.35-2.34,8.32-2.57l15.61-1.18c10.18-.77,9.39-13.03,17.1-26.19l4.45-7.6,7.76-16.02c.59-1.22,3.46-2.4,4.69-2.32,1.43.08,3.02,3.86,2.34,5.19-2.93,5.66-5.26,11.19-8.76,16.26l-20.51,29.72c-2.03,2.94-8.84,4.12-12.25,4.39l-15.17,1.22c-1.17,1.39.19,5.51,1.82,6.39,7.51,4.02,9.7,10.67,12.71,17.71,2.37,5.53,3.46,10.19,4.09,16.28l1.15,11.16c-.15,10.21-7.78,17.77-17.86,18.07l-9.29.27c13.4,8.71,20.38,23.25,15.31,39.02,7.2-8.64,16.41-14.16,27.9-12.37,1.65-6.02,1.68-11.64,1.21-17.97-.63-8.46,2.02-26.79,8.5-29.37l4.17-21.44c2.88-2.04,3.28-5.52,3.3-8.97,3.53-3.33,5.48-7.09,5.44-12.21l2.37,2.15,2.65-11.1,1.59,3.56,3.58-10.14c3.27-.12,3.02-4.67,4.11-6.35l5.73-8.81,3.17-4.87,6.24-6.18c.51-.5,3.1-.49,3.19.22s-.14,2.72-.62,3.33l-6.37,8.21-3.99,5.32c-1.14,1.53-1.85,2.45-1.81,4.58l-6.13,6.67,2.53.83-7.5,7.33c2.1,5.02-6.29,6.14-7.5,15l-4.8,8.07,1.73,1.91c-4.14,3.09-6.58,7.97-4.99,13.07-3.14,4.91-4.03,10.61-2,15.96-3.31,3.18-3.25,7.75-1.3,11.5l-1.82,11.01c.38.46,1.08,1.06.87,1.4l-1.46,2.48c-2.83,4.82-3.2,12.73-6.6,17.25l-6.9,9.18c-6.8,9.05-18.46,12.17-29.07,9.38l-4.6,8.79c-2.76,5.27,2.22,9.61,5.03,13.18,1.65,2.09,3.08,4.21,5.2,5.89,9.53-6.79,20.07-11.08,31.54-8.15s18.33,10.04,26.61,9.7l-2.09,1.37c-.4.26,1.29.94,1.74,1.25l6.49,4.52,9.47,7.75c.61.5,2.33,1.93,1.98,2.57l-1.54,2.86,14.91,13.16c2.22,1.96,4.72,3.22,7.77,3.73l-1.88,1.73,9.43,6.47c2.11,1.44,5.44,2.13,8.48,2.58l-1.82,1.39c-.37.28,1.1,1.08,1.66,1.44l11.56,7.14c5.38,3.33,14.18,1.5,18.71,6.5l-5.67-.7-.46,6.24-2.56-5.1c-.63-1.26-3.23-1.66-5.01-2.02l-2.3-.48c-.56-.12-1.32.69-1.81,1.12-1.53-3.59-4.66-5.81-8.1-5.61l-7.78-6.24.26,2.7c.03.34-1.33.22-1.53.03-1.02-2.41-3.82-8.64-7.68-6.19l-4.48-5.44-1.32,1.95-5.82-8.04c-2.01,3.89-.56,1.44-6.91-4.98l-9.94-10.04-4.48,1.86c-1.14.47-3.36-2.08-4.09-3.13l-1.54-2.21c-.33-.47-1.3,1.16-1.41,1.4l-3.38-5.87c-3.3-.56-4.18-2.61-6.36-4.81-5.61-5.65-11.52-10.12-18.26-15.49l-16.42,9.27c-5.13,2.9-10.59,3.6-15.41.29l-6.55.54-7.17-.49.59,7.14c5.86,2.64,12.23,6.74,13.5,13.32l1.52,7.89,10.44.39c8.72.33,16.6,4.24,24.79,7.1,4.81,1.68,8.09,5.2,10.5,9.69,4.28,10.18,7.2,19.94,8.68,31.29l4.09,2.69-3.87.38,1.66,8.06c.27,1.3,3.05,2.88,4.21,3.64l-4.09-.67,1.1,8.03.33,14.33-3.4-.37c1.42,8.22,4.02,15.48,8.06,23.15l-1.82.06c-.45.01-.26,1.64-.22,2.26l5.06,12.52c0,3.99,1.71,7.91,4.35,11.13-1.07,4.95,1.6,9.52,4.84,13.76.31,4.17,2.75,7.6,5.54,11l4.15,7.44c1.38,3.15,2.68,4.56,7.57,6.02l-4.78.87c-.97,1.82-1.76,3.22-3.31,4.94,1.3-4.6,0-9.05-4.45-11.38l-4.29-10.01c-1.28,2.62-1.99,1.84-1.87.13l-2.38-9.22-2.3,2.2c.42-6.52-2.18-11.44-4.02-16.88l-3.39-10.03-2.24-8.38-1.56,3.94.09-11.03-1.95,2.4c.68-6.41-.91-12.19-4.57-16.97l.59-6.53-6.5,3.3c.6,1.32-.38-.06-1.4-1.37l2.22-9.73-2.39,2.09c1.05-3.74,1.74-6.83,1.73-10.39l-.07-24.9,1.65-19.66-5.31-6.1c-14.93,3.72-34.41-1.23-43.44-13.36-4.25-5.71-5.49-12.5-11.64-17.29l1.69,10.13c.68,4.06-1.11,8.31-3.76,11.51,10.57,2.76,20.48,8.49,25.49,17.72l8.21,15.12c1.75,3.23-.45,8.5,3.68,17.5.68,3.96-.32,10.19-1.3,14.7-1.37,6.35-1.66,12.93-4.55,19.39-1.31,2.93-3.37,5.93-3.99,9.26l-1.76-.25c-.28-.04-.05.65.16,1.46Z');
+        ctx.fill(p);
+        ctx.restore();
+        pop();
+      }
     }
 
-    class Particle {
-      constructor(x, y) { 
-        this.id = random(100000); this.x = x; this.y = y; 
-        this.vx = random(-1, 1); this.vy = random(-1, 1); 
-        this.noiseOffsetX = random(100000); this.noiseOffsetY = random(100000); 
-        this.textureType = 0; this.size = random(35, 52); 
+    class Particle{
+      constructor(x,y){ this.id=random(100000);this.x=x;this.y=y;this.vx=random(-1,1);this.vy=random(-1,1);this.noiseOffsetX=random(100000);this.noiseOffsetY=random(100000);this.textureType=0;this.size=random(35,52); }
+      createMaterialImage(){
+        const sz=120;const g=createGraphics(sz,sz);g.pixelDensity(1);g.loadPixels();
+        for(let y=0;y<sz;y++){for(let x=0;x<sz;x++){
+          let tw=0,r=0,gc=0,b=0;
+          for(let p of this.meshPoints){let w=1/pow(dist(x,y,p.x,p.y)+1,5);tw+=w;r+=red(p.color)*w;gc+=green(p.color)*w;b+=blue(p.color)*w;}
+          let txt=0;
+          switch(this.textureType){case 0:txt=(random(1)>0.92)?random(-50,50):0;break;case 1:txt=noise(x*0.5,y*0.02)*40-20;break;case 2:txt=(sin(x*1.5)*15)+(cos(y*1.5)*15);break;case 3:txt=noise(x*0.08,y*0.08)*60-30;break;case 4:txt=random(-30,30);break;case 5:let n=noise(x*0.04,y*0.04);txt=n>0.6?40:(n<0.3?-40:0);break;}
+          let idx=(x+y*sz)*4;let d=dist(x,y,sz/2,sz/2);let ang=atan2(y-sz/2,x-sz/2);
+          let nr=noise(cos(ang)*1.2+1,sin(ang)*1.2+1,this.textureType)*22;
+          let m=map(d+nr,5,sz*0.55,255,0);
+          g.pixels[idx]=constrain(r/tw+txt,0,255);g.pixels[idx+1]=constrain(gc/tw+txt,0,255);g.pixels[idx+2]=constrain(b/tw+txt,0,255);g.pixels[idx+3]=constrain(m,0,255);
+        }}
+        g.updatePixels();return g;
       }
-      createMaterialImage() {
-        const sz = 120; const g = createGraphics(sz, sz); g.pixelDensity(1); g.loadPixels();
-        for (let y = 0; y < sz; y++) {
-          for (let x = 0; x < sz; x++) {
-            let tw = 0, r = 0, gc = 0, b = 0;
-            for (let p of this.meshPoints) { let w = 1 / pow(dist(x, y, p.x, p.y) + 1, 5); tw += w; r += red(p.color) * w; gc += green(p.color) * w; b += blue(p.color) * w; }
-            let txt = 0;
-            switch(this.textureType) {
-              case 0: txt = (random(1) > 0.92) ? random(-50, 50) : 0; break;
-              case 1: txt = noise(x * 0.5, y * 0.02) * 40 - 20; break;
-              case 2: txt = (sin(x * 1.5) * 15) + (cos(y * 1.5) * 15); break;
-              case 3: txt = noise(x * 0.08, y * 0.08) * 60 - 30; break;
-              case 4: txt = random(-30, 30); break;
-              case 5: let n = noise(x * 0.04, y * 0.04); txt = n > 0.6 ? 40 : (n < 0.3 ? -40 : 0); break;
-            }
-            let idx = (x + y * sz) * 4; let d = dist(x, y, sz/2, sz/2);
-            let ang = atan2(y - sz/2, x - sz/2); let noiseRadius = noise(cos(ang)*1.2 + 1, sin(ang)*1.2 + 1, this.textureType) * 22;
-            let m = map(d + noiseRadius, 5, sz * 0.55, 255, 0);
-            g.pixels[idx] = constrain(r/tw + txt, 0, 255); g.pixels[idx+1] = constrain(gc/tw + txt, 0, 255); g.pixels[idx+2] = constrain(b/tw + txt, 0, 255); g.pixels[idx+3] = constrain(m, 0, 255);
-          }
-        }
-        g.updatePixels(); return g;
+      update(){
+        const nx=noise(this.x*0.0012+this.noiseOffsetX,t)*2-1;
+        const ny=noise(this.y*0.0012+this.noiseOffsetY,t+500)*2-1;
+        const dx=width/2-this.x,dy=height/2-this.y;
+        this.vx+=nx*0.06+dx*gravityVal;this.vy+=ny*0.06+dy*gravityVal;
+        this.vx*=0.985;this.vy*=0.985;this.x+=this.vx;this.y+=this.vy;
+        if(this.x<marginVal)this.x=width-marginVal;if(this.x>width-marginVal)this.x=marginVal;
+        if(this.y<marginVal)this.y=height-marginVal;if(this.y>height-marginVal)this.y=marginVal;
       }
-      update() {
-        const nx = noise(this.x * 0.0012 + this.noiseOffsetX, t) * 2 - 1;
-        const ny = noise(this.y * 0.0012 + this.noiseOffsetY, t + 500) * 2 - 1;
-        const dx = width / 2 - this.x; const dy = height / 2 - this.y;
-        this.vx += nx * 0.06 + dx * gravityVal; this.vy += ny * 0.06 + dy * gravityVal;
-        this.vx *= 0.985; this.vy *= 0.985; this.x += this.vx; this.y += this.vy;
-        if (this.x < marginVal) this.x = width - marginVal; if (this.x > width - marginVal) this.x = marginVal;
-        if (this.y < marginVal) this.y = height - marginVal; if (this.y > height - marginVal) this.y = marginVal;
-      }
-      draw() { imageMode(CENTER); image(this.gradientImage, this.x, this.y, 150, 150); }
+      draw(){ imageMode(CENTER);image(this.gradientImage,this.x,this.y,150,150); }
     }
-    function lerpAngle(a, b, step) { let delta = b - a; while (delta > PI) delta -= TWO_PI; while (delta < -PI) delta += TWO_PI; return a + delta * step; }
-    function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+    function lerpAngle(a,b,step){let d=b-a;while(d>PI)d-=TWO_PI;while(d<-PI)d+=TWO_PI;return a+d*step;}
+    function windowResized(){ resizeCanvas(windowWidth,windowHeight); }
+
+    // Siembra recolecciones iniciales al azar con delay escalonado
+    function seedInitial(){
+      const n=${_recolInicial};
+      const tierras=${JSON.stringify(CONFIG.pigmentosGrupos.tierras)};
+      const vegetales=${JSON.stringify(CONFIG.pigmentosGrupos.vegetales)};
+      const luces=${JSON.stringify(CONFIG.pigmentosGrupos.luces)};
+      const regiones=${_reg};
+      const comensales=${_com};
+      function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
+      function texTypes(){return Math.floor(Math.random()*6);}
+      for(let i=0;i<n;i++){
+        setTimeout(()=>{
+          const colors=[rnd(tierras),rnd(vegetales),rnd(luces)];
+          addNodeFromRitual({
+            name:rnd(comensales),
+            region:rnd(regiones),
+            colors:colors,
+            tex:texTypes()
+          });
+        }, i * 180);
+      }
+    }
   <\/script>
 `;
 
-/** * --- CÓDIGO DEL RITUAL (POPUP) ---
- */
 const ritualCode = `
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="${_tipURL}" rel="stylesheet">
   <style>
-    body { margin: 0; background: #F2F2F2; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Helvetica Neue', Arial, sans-serif; }
-    #info-container { margin-top: -30px; text-align: center; min-height: 100px; }
-    .label-small { font-size: 9px; opacity: 0.6; letter-spacing: 2px; color: #111; margin-bottom: 5px; text-transform: uppercase; }
-    .main-text { font-size: 20px; font-weight: 400; text-transform: uppercase; letter-spacing: 2px; color: #111; min-height: 24px; }
-    .sub-text { font-size: 13px; font-style: italic; color: #555; margin-top: 4px; min-height: 16px; }
-    .fade-in { animation: fadeIn 0.8s forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    body{
+      margin:0;background:${CONFIG.colores.fondoPopup};
+      display:flex;flex-direction:column;justify-content:center;align-items:center;
+      height:100vh;overflow:hidden;
+      font-family:${_tipCuerpo};
+      -webkit-font-smoothing:antialiased;
+    }
+    canvas{margin-top:16px;}
+    #info-container{
+      margin-top:20px;text-align:center;
+      min-height:72px;padding:0 28px;width:100%;
+    }
+    .label-etapa{
+      font-family:${_tipLabel};font-weight:${_tipLabelPeso};
+      font-size:9px;letter-spacing:${CONFIG.tipografia.fontLabelSpacing};
+      text-transform:uppercase;color:${_textoSuaveSeg};margin-bottom:6px;
+    }
+    .main-text{
+      font-family:${_tipCuerpo};
+      font-size:21px;font-weight:400;letter-spacing:0.3px;
+      color:${_textoSeg};min-height:26px;line-height:1.2;
+    }
+    .sub-text{
+      font-family:${_tipCuerpo};
+      font-size:14px;font-style:italic;
+      color:${_textoSuaveSeg};
+      margin-top:4px;min-height:18px;
+    }
+    .fade-in{animation:fadeUp 0.7s cubic-bezier(0.4,0,0.2,1) forwards;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+    #progress-bar{
+      position:fixed;bottom:0;left:0;
+      height:${CONFIG.popup.barraAlto};width:0%;
+      background:${CONFIG.popup.barraColor};
+      transition:width 2.3s linear;
+      display:${CONFIG.popup.barraProgreso?'block':'none'};
+    }
   </style>
   <div id="info-container">
-    <div id="label" class="label-small">Iniciando...</div>
+    <div id="label" class="label-etapa">tramo alto — recolección</div>
     <div id="main" class="main-text"></div>
-    <div id="sub" class="sub-text"></div>
+    <div id="sub"  class="sub-text"></div>
   </div>
+  <div id="progress-bar"></div>
   <script>
-    const PALETA = { tierras: ['#5C3B24', '#7D3D3A', '#0F0F0F', '#1C160F', '#4E3146'], vegetales: ['#4D603A', '#214A51', '#009A9E', '#809B8E'], luces: ['#CCA337', '#DAA48D', '#D27500', '#FDF6E3', '#C05E23'] };
-    const INGREDIENTES = { '#5C3B24': 'arcilla de ribera', '#4D603A': 'yerba lucera', '#214A51': 'agua del estuario', '#4E3146': 'tinte de aguaribay', '#7D3D3A': 'tierra colorada', '#0F0F0F': 'carbón de sauce', '#1C160F': 'resina de espinillo', '#C05E23': 'fruto de tala', '#97472A': 'semilla de ceibo', '#CCA337': 'polen de chilca', '#DAA48D': 'flor de mburucuyá', '#D27500': 'junco maduro', '#009A9E': 'arcilla azulada', '#FDF6E3': 'cuarzo blanco', '#D7C59E': 'arena de duna', '#809B8E': 'caña tacuara', '#DA8E30': 'miel de camoatí', '#FFFFFF': 'espuma de río' };
-    const REGIONES = ["Punta Lara", "Delta del Paraná", "Pastizales del Sur", "Ribera de Quilmes", "Monte Blanco", "Juncales de Berisso"];
-    const COMENSALES = ["Tamara", "Lucía", "Rodri", "Renata", "Juana"];
-    
-    let ingredients = []; let currentRegion = ""; let currentComensal = "";
-    let texType, step = 0, walkCycle = 0, mixFactor = 0; const SZ = 160;
+    const PALETA=${_grupos};
+    const INGREDIENTES=${_ing};
+    const REGIONES=${_reg};
+    const COMENSALES=${_com};
 
-    function setup() { 
-      createCanvas(400, 400); 
-      pixelDensity(1); 
-      resetJourney(); 
+    const NARRATIVA=[
+      {label:"tramo alto — recolección",  main:()=>ingNombre(0), sub:"primer ingrediente"},
+      {label:"tramo alto — recolección",  main:()=>ingNombre(1), sub:"segundo ingrediente"},
+      {label:"tramo alto — recolección",  main:()=>ingNombre(2), sub:"tercer ingrediente"},
+      {label:"punto vivo — encuentro",    main:()=>currentRegion, sub:"saber del territorio"},
+      {label:"la corriente — devolución", main:"pigmento completo", sub:"incliná hacia el río"},
+    ];
+    function ingNombre(i){ return ingredients[i]?ingredients[i].name:''; }
+
+    let ingredients=[],currentRegion="",currentComensal="";
+    let texType,step=0,walkCycle=0,mixFactor=0;
+    const SZ=160;
+
+    function setup(){
+      let sz=min(windowWidth*0.7,280);
+      createCanvas(sz,sz);pixelDensity(1);resetJourney();
     }
-
-    function resetJourney() {
-      step = 0; walkCycle = 0; mixFactor = 0; texType = floor(random(6));
-      currentComensal = random(COMENSALES); currentRegion = random(REGIONES);
-      let c1 = random(PALETA.tierras); let c2 = random(PALETA.vegetales); let c3 = random(PALETA.luces);
-      ingredients = [c1, c2, c3].map(c => ({ originX: random(45, SZ-45), originY: random(45, SZ-45), color: color(c), hex: c, name: INGREDIENTES[c.toUpperCase()], strength: 0 }));
+    function resetJourney(){
+      step=0;walkCycle=0;mixFactor=0;texType=floor(random(6));
+      currentComensal=random(COMENSALES);currentRegion=random(REGIONES);
+      let c1=random(PALETA.tierras),c2=random(PALETA.vegetales),c3=random(PALETA.luces);
+      ingredients=[c1,c2,c3].map(c=>({
+        originX:random(45,SZ-45),originY:random(45,SZ-45),
+        color:color(c),hex:c,name:INGREDIENTES[c.toUpperCase()]||'materia',strength:0
+      }));
     }
-
-    function draw() {
-      background(242); 
-      updateNarrative();
-      walkCycle += 0.035; 
-      if (step >= 5) mixFactor = lerp(mixFactor, 1, 0.012);
-      
-      translate(width/2 - SZ/2, height/2 - SZ/2);
-      let pg = createGraphics(SZ, SZ); pg.loadPixels();
-      for (let y = 0; y < SZ; y++) {
-        for (let x = 0; x < SZ; x++) {
-          let tw = 0, r = 0, g = 0, b = 0;
-          for (let i = 0; i < ingredients.length; i++) {
-            let p = ingredients[i]; if (p.strength > 0.01) {
-              let angle = walkCycle + (i * TWO_PI / 3);
-              let posX = p.originX + sin(angle) * (22 * mixFactor); 
-              let posY = p.originY + cos(angle) * (22 * mixFactor);
-              let w = 1 / pow(dist(x, y, posX, posY) + 1, 5) * p.strength;
-              tw += w; r += red(p.color) * w; g += green(p.color) * w; b += blue(p.color) * w;
-            }
-          }
-          if (tw > 0) {
-            let txt = 0; if (step >= 4) { switch(texType) { case 0: txt = (random(1) > 0.8) ? random(-75, 75) : 0; break; case 1: txt = noise(x * 0.4, y * 0.1) * 85 - 42; break; case 2: txt = sin(x * 1.8) * 28; break; default: txt = random(-35, 35); } }
-            let idx = (x + y * SZ) * 4; 
-            let d = dist(x, y, SZ/2, SZ/2) + noise(cos(atan2(y-SZ/2, x-SZ/2))+1, sin(atan2(y-SZ/2, x-SZ/2))+1, walkCycle*0.4)*28;
-            let m = map(d, 0, SZ * 0.46, 255, 0);
-            pg.pixels[idx] = constrain(r/tw + txt, 0, 255); pg.pixels[idx+1] = constrain(g/tw + txt, 0, 255); pg.pixels[idx+2] = constrain(b/tw + txt, 0, 255); pg.pixels[idx+3] = constrain(m, 0, 255);
+    function draw(){
+      background(${hexToRgb(CONFIG.colores.fondoPopup).r},${hexToRgb(CONFIG.colores.fondoPopup).g},${hexToRgb(CONFIG.colores.fondoPopup).b});
+      updateNarrative();walkCycle+=0.035;
+      if(step>=5) mixFactor=lerp(mixFactor,1,0.012);
+      translate(width/2-SZ/2,height/2-SZ/2);
+      let pg=createGraphics(SZ,SZ);pg.loadPixels();
+      for(let y=0;y<SZ;y++){for(let x=0;x<SZ;x++){
+        let tw=0,r=0,g=0,b=0;
+        for(let i=0;i<ingredients.length;i++){
+          let p=ingredients[i];
+          if(p.strength>0.01){
+            let angle=walkCycle+(i*TWO_PI/3);
+            let posX=p.originX+sin(angle)*(22*mixFactor);
+            let posY=p.originY+cos(angle)*(22*mixFactor);
+            let w=1/pow(dist(x,y,posX,posY)+1,5)*p.strength;
+            tw+=w;r+=red(p.color)*w;g+=green(p.color)*w;b+=blue(p.color)*w;
           }
         }
-      }
-      pg.updatePixels(); image(pg, 0, 0);
-      
-      if (step === 5 && mixFactor > 0.92) { 
-        window.parent.postMessage({
-          type: 'RITUAL_COMPLETE',
-          data: { name: currentComensal, region: currentRegion, colors: ingredients.map(i => i.hex), tex: texType }
-        }, '*');
+        if(tw>0){
+          let txt=0;
+          if(step>=4){switch(texType){case 0:txt=(random(1)>0.8)?random(-75,75):0;break;case 1:txt=noise(x*0.4,y*0.1)*85-42;break;case 2:txt=sin(x*1.8)*28;break;default:txt=random(-35,35);}}
+          let idx=(x+y*SZ)*4;
+          let d=dist(x,y,SZ/2,SZ/2)+noise(cos(atan2(y-SZ/2,x-SZ/2))+1,sin(atan2(y-SZ/2,x-SZ/2))+1,walkCycle*0.4)*28;
+          let m=map(d,0,SZ*0.46,255,0);
+          pg.pixels[idx]=constrain(r/tw+txt,0,255);pg.pixels[idx+1]=constrain(g/tw+txt,0,255);pg.pixels[idx+2]=constrain(b/tw+txt,0,255);pg.pixels[idx+3]=constrain(m,0,255);
+        }
+      }}
+      pg.updatePixels();image(pg,0,0);
+      if(step===5&&mixFactor>0.92){
+        window.parent.postMessage({type:'RITUAL_COMPLETE',data:{name:currentComensal,region:currentRegion,colors:ingredients.map(i=>i.hex),tex:texType}},'*');
         noLoop();
       }
     }
-
-    function updateNarrative() {
-      let label = document.getElementById('label'); let main = document.getElementById('main');
-      if (frameCount % 150 === 0 && step < 5) { 
-        step++; 
-        main.classList.remove('fade-in'); 
-        void main.offsetWidth; 
-        main.classList.add('fade-in'); 
+    function updateNarrative(){
+      const label=document.getElementById('label'),main=document.getElementById('main'),sub=document.getElementById('sub'),bar=document.getElementById('progress-bar');
+      if(frameCount%150===0&&step<5){
+        step++;
+        main.classList.remove('fade-in');void main.offsetWidth;main.classList.add('fade-in');
+        sub.classList.remove('fade-in');void sub.offsetWidth;sub.classList.add('fade-in');
+        bar.style.width=(step/5*100)+'%';
       }
-      if (step >= 1 && step <= 3) { ingredients[step-1].strength = lerp(ingredients[step-1].strength, 1, 0.05); label.innerText = "Cazando Ingrediente " + step; main.innerText = ingredients[step-1].name; }
-      else if (step === 4) { label.innerText = "Recibiendo Consejo"; main.innerText = "Región: " + currentRegion; }
-      else if (step === 5) { label.innerText = "Alimento Ritual"; main.innerText = "Sabores Licuados"; }
+      const idx=Math.max(0,step-1);
+      const n=NARRATIVA[idx]||NARRATIVA[NARRATIVA.length-1];
+      label.innerText=n.label;
+      main.innerText=typeof n.main==='function'?n.main():n.main;
+      sub.innerText=n.sub;
+      if(step>=1&&step<=3) ingredients[step-1].strength=lerp(ingredients[step-1].strength,1,0.05);
     }
   <\/script>
 `;
 
-// --- INYECTAR ECOSISTEMA ---
-const ecoContainer = document.getElementById('ecosystem-container');
-const ecoIframe = document.createElement('iframe');
-ecoIframe.id = "ecosystem-frame";
+const ecoContainer=document.getElementById('ecosystem-container');
+const ecoIframe=document.createElement('iframe');
+ecoIframe.id='ecosystem-frame';
 ecoContainer.appendChild(ecoIframe);
 ecoIframe.contentWindow.document.open();
 ecoIframe.contentWindow.document.write(ecosystemCode);
 ecoIframe.contentWindow.document.close();
 
-// --- LÓGICA DE CONTROL DE POPUP (REINICIO BLINDADO) ---
-function startCapture() {
-  const container = document.getElementById('ritual-container');
-  
-  // Limpiamos el contenedor por si había un iframe viejo
-  container.innerHTML = ''; 
-  const newIframe = document.createElement('iframe');
-  newIframe.id = "ritual-iframe";
+function startCapture(){
+  const container=document.getElementById('ritual-container');
+  const handle=document.getElementById('ritual-handle');
+  const line=document.getElementById('ritual-line');
+  const wm=document.getElementById('stage-watermark');
+  container.innerHTML='';
+  container.appendChild(handle);
+  container.appendChild(line);
+  container.appendChild(wm);
+  const newIframe=document.createElement('iframe');
+  newIframe.id='ritual-iframe';
   container.appendChild(newIframe);
-  
-  container.style.display = 'flex';
-  
-  // Escribimos el código del ritual en el nuevo iframe
+  container.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    container.classList.add('visible');
+    document.getElementById('overlay').classList.add('visible');
+  }));
   newIframe.contentWindow.document.open();
   newIframe.contentWindow.document.write(ritualCode);
   newIframe.contentWindow.document.close();
 }
 
-// Escuchar mensaje de fin de ritual
-window.addEventListener('message', function(event) {
-  if (event.data.type === 'RITUAL_COMPLETE') {
-    setTimeout(() => {
-      document.getElementById('ritual-container').style.display = 'none';
-      // Mandar datos al ecosistema de fondo
-      const ecoFrame = document.getElementById('ecosystem-frame');
-      ecoFrame.contentWindow.addNodeFromRitual(event.data.data);
+function closeCapture(){
+  const container=document.getElementById('ritual-container');
+  container.classList.remove('visible');
+  document.getElementById('overlay').classList.remove('visible');
+  setTimeout(()=>{ container.style.display='none'; }, 520);
+}
+
+document.addEventListener('click', function(event){
+  const container = document.getElementById('ritual-container');
+  const isOpen = container && container.classList.contains('visible');
+  if (!isOpen) startCapture();
+});
+
+window.addEventListener('message',function(event){
+  if(event.data.type==='START_CAPTURE'){
+    const container=document.getElementById('ritual-container');
+    const isOpen = container && container.classList.contains('visible');
+    if (!isOpen) startCapture();
+  }
+  if(event.data.type==='RITUAL_COMPLETE'){
+    setTimeout(()=>{
+      closeCapture();
+      setTimeout(()=>{
+        document.getElementById('ecosystem-frame').contentWindow.addNodeFromRitual(event.data.data);
+      }, 300);
     }, 800);
   }
 });
